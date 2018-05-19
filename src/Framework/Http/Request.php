@@ -17,7 +17,9 @@ use SebastianBergmann\Timer\RuntimeException;
 class Request implements RequestInterface
 {
 
-    private $uri, $method, $stream, $headers;
+    protected $uri, $method, $headers = [], $headerNames = [];
+
+    private $protocol = '1.1', $stream;
 
     private function initialize($uri = null, $method = null, $body = 'php://memory', array $headers = [])
     {
@@ -28,6 +30,11 @@ class Request implements RequestInterface
         $this->stream = $this->getStream($body, 'wb+');
 
         $this->setHeaders($headers);
+
+        if (! $this->hasHeader('Host') && $this->uri->getHost()) {
+            $this->headerNames['host'] = 'Host';
+            $this->headers['Host'] = [$this->getHostFromUri()];
+        }
     }
 
     private function createUri($uri)
@@ -50,7 +57,19 @@ class Request implements RequestInterface
 
     private function setHeaders(array $originalHeaders)
     {
+        $headerNames = $headers = [];
 
+        foreach ($originalHeaders as $header => $value) {
+            $value = $this->filterHeaderValue($value);
+
+            $this->assertHeader($header);
+
+            $headerNames[strtolower($header)] = $header;
+            $headers[$header] = $value;
+        }
+
+        $this->headerNames = $headerNames;
+        $this->headers = $headers;
     }
 
     private function guardMethod($method)
