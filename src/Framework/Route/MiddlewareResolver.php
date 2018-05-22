@@ -10,6 +10,7 @@ namespace Framework\Route;
 
 
 use Framework\Pipeline\InteropHandlerWrapper;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -19,6 +20,13 @@ use Zend\Stratigility\MiddlewarePipe;
 
 class MiddlewareResolver
 {
+    private $container;
+
+    public function __construct(ContainerInterface $container)
+    {
+
+        $this->container = $container;
+    }
 
     public function resolve($handler): ?MiddlewareInterface
     {
@@ -26,9 +34,9 @@ class MiddlewareResolver
             return $this->createPipe($handler);
         }
 
-        if (\is_string($handler)) {
+        if (\is_string($handler) && $this->container->has($handler)) {
             return middleware(function (ServerRequestInterface $request, RequestHandlerInterface $next) use ($handler) {
-                $mware = $this->resolve(new $handler());
+                $mware = $this->resolve($this->container->get($handler));
                 return $mware->process($request, $next);
             });
         }
@@ -52,6 +60,8 @@ class MiddlewareResolver
                 return middleware($handler);
             }
         }
+
+        var_dump($handler);
 
         throw new \RuntimeException('Invalid type of handler');
     }
