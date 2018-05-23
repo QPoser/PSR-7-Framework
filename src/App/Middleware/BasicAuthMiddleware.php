@@ -26,6 +26,7 @@ class BasicAuthMiddleware implements MiddlewareInterface
         if (!empty($username) && !empty($password)) {
             foreach ($this->users as $name => $pass) {
                 if ($username === $name && $password === $pass) {
+                    $request = $request->withAttribute('X-User', $username);
                     return $handler->handle($request);
                 }
             }

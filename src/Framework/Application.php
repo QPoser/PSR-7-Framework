@@ -16,6 +16,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Zend\Stdlib\ResponseInterface;
+use function Zend\Stratigility\middleware;
 use Zend\Stratigility\MiddlewarePipe;
 use function Zend\Stratigility\path;
 
@@ -42,38 +43,45 @@ class Application
         $this->router = $router;
     }
 
-    public function pipe($path = null, $middleware): void
+    public function pipe($path, $middleware = null): void
     {
-        if ($path != null) {
-            $this->pipe->pipe(path($path, $this->resolver->resolve($middleware)));
+        if ($middleware != null) {
+             $this->pipe->pipe($this->resolver->resolve($middleware, $path));
+        } else {
+	        $this->pipe->pipe($this->resolver->resolve($path));
         }
-        $this->pipe->pipe($this->resolver->resolve($middleware));
     }
 
     private function route($name, $path, $handler, array $methods, array $options = []): void
     {
         $this->router->addRoute(new RouteData($name, $path, $handler, $methods, $options));
     }
+
     public function any($name, $path, $handler, array $options = []): void
     {
         $this->route($name, $path, $handler, $options);
     }
+
     public function get($name, $path, $handler, array $options = []): void
     {
         $this->route($name, $path, $handler, ['GET'], $options);
     }
+
     public function post($name, $path, $handler, array $options = []): void
     {
         $this->route($name, $path, $handler, ['POST'], $options);
     }
+
     public function put($name, $path, $handler, array $options = []): void
     {
         $this->route($name, $path, $handler, ['PUT'], $options);
     }
+
     public function patch($name, $path, $handler, array $options = []): void
     {
         $this->route($name, $path, $handler, ['PATCH'], $options);
     }
+
     public function delete($name, $path, $handler, array $options = []): void
     {
         $this->route($name, $path, $handler, ['DELETE'], $options);

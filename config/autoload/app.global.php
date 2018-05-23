@@ -22,6 +22,9 @@ return [
             \Framework\Route\MiddlewareResolver::class => function (\Psr\Container\ContainerInterface $container) {
                 return new \Framework\Route\MiddlewareResolver($container);
             },
+            \Framework\Template\TemplateRenderer::class => function (\Psr\Container\ContainerInterface $container) {
+                return new \Framework\Template\PhpRenderer('templates', $container->get(Router::class));
+            },
         ]
     ],
 

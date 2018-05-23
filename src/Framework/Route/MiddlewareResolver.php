@@ -17,6 +17,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use function Zend\Stratigility\middleware;
 use Zend\Stratigility\MiddlewarePipe;
+use function Zend\Stratigility\path;
 
 class MiddlewareResolver
 {
@@ -28,23 +29,34 @@ class MiddlewareResolver
         $this->container = $container;
     }
 
-    public function resolve($handler): ?MiddlewareInterface
+    public function resolve($handler, $path = false): ?MiddlewareInterface
     {
         if (\is_array($handler)) {
             return $this->createPipe($handler);
         }
 
         if (\is_string($handler) && $this->container->has($handler)) {
-            return middleware(function (ServerRequestInterface $request, RequestHandlerInterface $next) use ($handler) {
-                $mware = $this->resolve($this->container->get($handler));
-                return $mware->process($request, $next);
-            });
+        	if ($path) {
+		        return path($path, middleware(function (ServerRequestInterface $request, RequestHandlerInterface $next) use ($handler) {
+			        $mware = $this->resolve($this->container->get($handler));
+			        return $mware->process($request, $next);
+		        }));
+	        }
+	        return middleware(function (ServerRequestInterface $request, RequestHandlerInterface $next) use ($handler) {
+		        $mware = $this->resolve($this->container->get($handler));
+		        return $mware->process($request, $next);
+	        });
         }
 
         if ($handler instanceof MiddlewareInterface) {
-            return middleware(function (ServerRequestInterface $request, RequestHandlerInterface $next) use ($handler) {
-                return $handler->process($request, $next);
-            });
+        	if ($path) {
+		        return path($path, middleware(function (ServerRequestInterface $request, RequestHandlerInterface $next) use ($handler) {
+			        return $handler->process($request, $next);
+		        }));
+	        }
+	        return middleware(function (ServerRequestInterface $request, RequestHandlerInterface $next) use ($handler) {
+		        return $handler->process($request, $next);
+	        });
         }
 
         if (\is_object($handler)) {
@@ -53,15 +65,21 @@ class MiddlewareResolver
                 $method = $reflection->getMethod('__invoke');
                 $parameters = $method->getParameters();
                 if (count($parameters) === 2 && $parameters[1]->isCallable()) {
-                    return middleware(function (ServerRequestInterface $request, ResponseInterface $response, callable $next) use ($handler) {
-                        return $handler($request, $next);
-                    });
+                	if ($path) {
+		                return path($path, middleware(function (ServerRequestInterface $request, ResponseInterface $response, callable $next) use ($handler) {
+			                return $handler($request, $next);
+		                }));
+	                }
+	                return middleware(function (ServerRequestInterface $request, ResponseInterface $response, callable $next) use ($handler) {
+		                return $handler($request, $next);
+	                });
                 }
-                return middleware($handler);
+                if ($path) {
+	                return path($path, middleware($handler));
+                }
+	            return middleware($handler);
             }
         }
-
-        var_dump($handler);
 
         throw new \RuntimeException('Invalid type of handler');
     }
