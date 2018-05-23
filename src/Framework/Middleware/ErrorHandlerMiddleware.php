@@ -16,23 +16,34 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Zend\Diactoros\Response\HtmlResponse;
 
-class NotFoundMiddleware implements MiddlewareInterface
+class ErrorHandlerMiddleware implements MiddlewareInterface
 {
 
 	/**
 	 * @var TemplateRenderer
 	 */
 	private $renderer;
+	/**
+	 * @var bool
+	 */
+	private $debug;
 
-	public function __construct(TemplateRenderer $renderer)
+	public function __construct($debug = false, TemplateRenderer $renderer)
 	{
 		$this->renderer = $renderer;
+		$this->debug = $debug;
 	}
 
 	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        return new HtmlResponse($this->renderer->render('/error/404', [
-        	'request' => $request,
-        ]), 404);
+        try {
+        	return $handler->handle($request);
+        } catch (\Throwable|\Exception $e) {
+        	$view = $this->debug ? 'error/error-debug' : 'error/error';
+        	return new HtmlResponse($this->renderer->render($view, [
+        		'request' => $request,
+		        'exception' => $e,
+	        ]), $e->getCode() ?: 500);
+        }
     }
 }

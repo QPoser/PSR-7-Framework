@@ -42,7 +42,7 @@ class RouteMiddleware implements MiddlewareInterface
             }
             $response = $handler->handle($request->withAttribute(Result::class, $result));
             return $response->withHeader('Andrey', '2');
-        } catch (\RuntimeException $e) {
+        } catch (\HttpRequestException $e) {
             return $handler->handle($request);
         }
     }

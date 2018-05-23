@@ -2,31 +2,19 @@
 
 /** @var \Framework\Application $app */
 
-$app->get('home', '/', function () {
-    return new \Zend\Diactoros\Response\HtmlResponse('Home page.');
-});
+use App\Middleware\AboutAction;
+use App\Middleware\BlogAction;
+use App\Middleware\CabinetAction;
+use App\Middleware\HomeAction;
 
-$app->get('about.ab', '/about/{ab}', \App\Middleware\AboutAction::class);
+$app->get('home', '/', HomeAction::class);
 
-$app->get('cabinet', '/cabinet', function(\Psr\Http\Message\ServerRequestInterface $request) {
-    $username = $request->getAttribute('X-User');
-    return new \Zend\Diactoros\Response\HtmlResponse('Hello, you logined by ' . $username);
-});
+$app->get('about.ab', '/about/{ab}', AboutAction::class);
 
-$app->get('about', '/about', \App\Middleware\AboutAction::class);
+$app->get('cabinet', '/cabinet', CabinetAction::class);
 
-$app->get('blog', '/blog', \App\Middleware\BlogMiddleware::class);
+$app->get('about', '/about', AboutAction::class);
 
-$app->get('blog.get', '/blog/{id}', function(\Psr\Http\Message\ServerRequestInterface $request) {
-    $id = $request->getAttribute('id');
+$app->get('blog', '/blog', BlogAction::class);
 
-    if ($id > 2) {
-        return new \Zend\Diactoros\Response\HtmlResponse('Undefined page', 404);
-    }
-
-    return new \Zend\Diactoros\Response\JsonResponse(['id' => $id, 'title' => 'Post #' . $id]);
-}, ['tokens' => ['id' => '\d+']]);
-
-$app->get('blog.test', '/blog/test', function() {
-    return new \Zend\Diactoros\Response\HtmlResponse('Blog test.');
-});
+$app->get('blog.get', '/blog/{id}', BlogAction::class, ['tokens' => ['id' => '\d+']]);

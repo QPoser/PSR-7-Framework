@@ -25,6 +25,12 @@ return [
             \Framework\Template\TemplateRenderer::class => function (\Psr\Container\ContainerInterface $container) {
                 return new \Framework\Template\PhpRenderer('templates', $container->get(Router::class));
             },
+	        \Framework\Middleware\ErrorHandlerMiddleware::class => function (\Psr\Container\ContainerInterface $container) {
+				return new \Framework\Middleware\ErrorHandlerMiddleware(
+						$container->get('config')['debug'],
+						$container->get(\Framework\Template\TemplateRenderer::class)
+				);
+	        },
         ]
     ],
 
