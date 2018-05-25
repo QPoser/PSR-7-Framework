@@ -23,13 +23,30 @@ class BlogAction implements MiddlewareInterface
 	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
     	$id = $request->getAttribute('id');
+	    $articles = $this->getArticles();
 
-    	if ($id > 2) {
-    		return $handler->handle($request);
+    	if ($id) {
+		    if ($id > count($articles)) {
+			    return $handler->handle($request);
+		    }
+
+		    return new \Zend\Diactoros\Response\HtmlResponse($this->renderer->render('app/blog/article', [
+			    'id' => $id,
+			    'article' => $articles[$id],
+		    ]));
 	    }
 
-        return new \Zend\Diactoros\Response\HtmlResponse($this->renderer->render('app/blog', [
-        	'id' => $id,
-        ]));
+	    return new \Zend\Diactoros\Response\HtmlResponse($this->renderer->render('app/blog/blog', [
+		    'articles' => $articles,
+	    ]));
+    }
+
+    private function getArticles()
+    {
+    	return [
+    	    1 => 'Post 1',
+		    2 => 'Post 2',
+		    3 => 'Post 3',
+	    ];
     }
 }

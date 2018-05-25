@@ -1,0 +1,20 @@
+
+{% extends "layout/columns.html.twig" %}
+
+{% block title %} Blog {% endblock %}
+
+{% block meta %}
+    <meta name="description" content="Blog description">
+{% endblock %}
+
+{% block breadcrumbs %}
+    <ul class="breadcrumb">
+        <li><a href="{{ path('home') }}">Home</a></li>
+        <li><a href="{{ path('blog') }}">Blog</a></li>
+        <li class="active">{{ article }}</li>
+    </ul>
+{% endblock %}
+
+{% block main %}
+    <h1>{{ article }}</h1>
+{% endblock %}
