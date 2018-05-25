@@ -9,7 +9,11 @@
 namespace Framework\Template\Php;
 
 
-class Extension
+abstract class Extension
 {
 
+	public function getFunctions(): array
+	{
+		return [];
+	}
 }

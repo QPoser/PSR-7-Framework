@@ -1,34 +1,73 @@
 <?php
 
 
+use Aura\Router\RouterContainer;
 use Framework\Application;
+use Framework\Middleware\ErrorHandlerMiddleware;
+use Framework\Route\AuraRouterAdapter;
+use Framework\Route\MiddlewareResolver;
 use Framework\Route\Router;
+use Framework\Template\Php\Extension\RouteExtension;
+use Framework\Template\PhpRenderer;
+use Framework\Template\TemplateRenderer;
+use Framework\Template\TwigRenderer;
+use Psr\Container\ContainerInterface;
+use Twig\Environment;
+use Zend\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory;
 
 return [
     'dependencies' => [
         'abstract_factories' => [
-            \Zend\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
+            ReflectionBasedAbstractFactory::class,
         ],
         'factories' => [
-            \Framework\Application::class => function (\Psr\Container\ContainerInterface $container) {
+            Application::class => function (ContainerInterface $container) {
                 return new Application(
-                    $container->get(\Framework\Route\MiddlewareResolver::class),
+                    $container->get(MiddlewareResolver::class),
                     $container->get(Router::class)
                 );
             },
             Router::class => function () {
-                return new \Framework\Route\AuraRouterAdapter(new \Aura\Router\RouterContainer());
+                return new AuraRouterAdapter(new RouterContainer());
             },
-            \Framework\Route\MiddlewareResolver::class => function (\Psr\Container\ContainerInterface $container) {
-                return new \Framework\Route\MiddlewareResolver($container);
+            MiddlewareResolver::class => function (ContainerInterface $container) {
+                return new MiddlewareResolver($container);
             },
-            \Framework\Template\TemplateRenderer::class => function (\Psr\Container\ContainerInterface $container) {
-                return new \Framework\Template\PhpRenderer('templates', $container->get(Router::class));
+	        Environment::class => function (ContainerInterface $container) {
+
+				$templateDir = 'templates';
+				$cacheDir = 'var/cache/twig';
+				$debug = $container->get('config')['debug'];
+
+				$loader = new \Twig\Loader\FilesystemLoader();
+				$loader->addPath($templateDir);
+
+				$environment = new Environment($loader, [
+					'cache' => $debug ? false : $cacheDir,
+					'debug' => $debug,
+					'strict_variables' => $debug,
+					'auto_reload' => $debug,
+				]);
+
+				if ($debug) {
+					$environment->addExtension(new \Twig\Extension\DebugExtension());
+				}
+
+				$environment->addExtension($container->get(RouteExtension::class));
+
+				return $environment;
+	        },
+	        RouteExtension::class => function (ContainerInterface $container) {
+				return new RouteExtension($container->get(Router::class));
+	        },
+            TemplateRenderer::class => function (ContainerInterface $container) {
+				return new TwigRenderer($container->get(Environment::class));
+                //return new PhpRenderer('templates', $container->get(Router::class));
             },
-	        \Framework\Middleware\ErrorHandlerMiddleware::class => function (\Psr\Container\ContainerInterface $container) {
-				return new \Framework\Middleware\ErrorHandlerMiddleware(
+	        ErrorHandlerMiddleware::class => function (ContainerInterface $container) {
+				return new ErrorHandlerMiddleware(
 						$container->get('config')['debug'],
-						$container->get(\Framework\Template\TemplateRenderer::class)
+						$container->get(TemplateRenderer::class)
 				);
 	        },
         ]
